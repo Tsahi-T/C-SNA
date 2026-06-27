@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מעגלי החברים – צחי</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #07071a;
+  color: #e0e0ff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ───── Header ───── */
+#header {
+  position: fixed; top:0; right:0; left:0;
+  height: 48px;
+  display: flex; align-items: center; padding: 0 20px; gap: 12px;
+  background: rgba(7,7,26,.92);
+  border-bottom: 1px solid rgba(130,130,230,.25);
+  z-index: 100;
+}
+#header h1 { font-size:16px; font-weight:300; color:#a0a0ff; }
+#hint { font-size:12px; color:rgba(255,255,255,.3); margin-right:auto; }
+
+/* ───── Graph ───── */
+#graph-wrap {
+  position: fixed; top:48px; left:0; right:0; bottom:0;
+}
+svg { width:100%; height:100%; }
+
+.link { stroke-opacity:.45; }
+
+.node circle { cursor:pointer; transition: filter .15s; }
+.node circle:hover { filter: brightness(1.5); }
+
+.node text {
+  text-anchor: middle; dominant-baseline: middle;
+  pointer-events: none;
+  font-family: Arial, sans-serif;
+}
+
+.group-tag {
+  fill: rgba(255,255,255,.13);
+  font-size: 13px;
+  font-family: Arial, sans-serif;
+  pointer-events: none;
+}
+
+/* ───── Info Panel ───── */
+#panel {
+  position: fixed; top:48px; right:0;
+  width: 260px; height: calc(100vh - 48px);
+  background: rgba(10,10,32,.96);
+  border-right: none;
+  border-left: 1px solid rgba(130,130,230,.3);
+  padding: 24px 20px 20px;
+  transform: translateX(100%);
+  transition: transform .3s ease;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+}
+#panel.open { transform: translateX(0); }
+
+#panel-close {
+  position: absolute; top:12px; left:12px;
+  background: none; border: none;
+  color: rgba(255,255,255,.45); font-size:22px;
+  cursor:pointer; line-height:1;
+}
+#panel-close:hover { color:#fff; }
+
+#panel h2 { font-size:22px; margin-bottom:4px; color:#fff; }
+
+.p-group { font-size:12px; color:rgba(255,255,255,.45); margin-bottom:14px; }
+
+.p-section-label {
+  font-size:10px; letter-spacing:.08em;
+  color:rgba(255,255,255,.35);
+  text-transform: uppercase;
+  margin-bottom:6px;
+}
+
+.dots { display:flex; gap:6px; margin-bottom:18px; }
+.dot {
+  width:11px; height:11px; border-radius:50%;
+  transition: opacity .2s;
+}
+
+.p-phone {
+  font-size:15px; color:#8ecfff;
+  direction:ltr; text-align:right;
+  margin-bottom:20px; display:block;
+  letter-spacing:.04em;
+}
+
+.wa-btn {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  background:#25d366; color:#fff; border:none;
+  padding:10px 16px; border-radius:22px;
+  cursor:pointer; font-size:14px; font-family:Arial,sans-serif;
+  text-decoration:none; width:100%;
+  transition: background .2s;
+}
+.wa-btn:hover { background:#1cb254; }
+
+/* ───── Legend ───── */
+#legend {
+  position:fixed; bottom:20px; left:20px;
+  background:rgba(10,10,32,.82);
+  border:1px solid rgba(130,130,230,.25);
+  border-radius:10px; padding:12px 16px;
+  font-size:12px; z-index:50;
+}
+.leg { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.leg:last-child { margin-bottom:0; }
+.leg-dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
+
+/* ───── Center pulse ───── */
+@keyframes pulse {
+  0%,100% { opacity:.6; r:32; }
+  50%      { opacity:1;  r:34; }
+}
+.center-ring { animation: pulse 2.8s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>מעגלי החברים של צחי</h1>
+  <span id="hint">לחץ על חבר לפרטים · גרור · גלגל עכבר לזום</span>
+</div>
+
+<div id="graph-wrap"><svg id="graph"></svg></div>
+
+<!-- Panel -->
+<div id="panel">
+  <button id="panel-close" onclick="closePanel()">×</button>
+  <h2 id="p-name"></h2>
+  <div class="p-group" id="p-group"></div>
+
+  <div class="p-section-label">קרבה</div>
+  <div class="dots" id="p-dots"></div>
+
+  <div class="p-section-label">טלפון</div>
+  <span class="p-phone" id="p-phone"></span>
+
+  <a class="wa-btn" id="p-wa" href="#" target="_blank">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.12 1.533 5.849L.054 23.25a.75.75 0 00.921.921l5.4-1.479A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 01-5.003-1.384l-.36-.214-3.733 1.021 1.021-3.733-.214-.36A9.712 9.712 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+    </svg>
+    שלח הודעה בוואטסאפ
+  </a>
+</div>
+
+<!-- Legend -->
+<div id="legend">
+  <div class="leg"><div class="leg-dot" style="background:#ff6b6b;box-shadow:0 0 7px #ff6b6b44"></div><span>קרוב מאוד</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#ffb347;box-shadow:0 0 7px #ffb34744"></div><span>קרוב</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#74b9ff;box-shadow:0 0 7px #74b9ff44"></div><span>מכר</span></div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────
+// closeness: 1=קרוב מאוד  2=קרוב  3=מכר
+const NODES = [
+  { id:"צחי",   group:"center", closeness:0, phone:null,          r:26 },
+
+  // חברים הכי טובים
+  { id:"דני",   group:"best",   closeness:1, phone:"050-111-2233", r:17 },
+  { id:"מיכה",  group:"best",   closeness:1, phone:"052-333-4455", r:17 },
+  { id:"יוסי",  group:"best",   closeness:2, phone:"053-555-6677", r:15 },
+
+  // עבודה
+  { id:"שרה",   group:"work",   closeness:2, phone:"054-111-9900", r:14 },
+  { id:"אלי",   group:"work",   closeness:3, phone:"055-222-8811", r:12 },
+  { id:"רינה",  group:"work",   closeness:2, phone:"056-333-7722", r:14 },
+  { id:"בני",   group:"work",   closeness:3, phone:"057-444-6633", r:12 },
+  { id:"ערן",   group:"work",   closeness:3, phone:"058-555-5544", r:12 },
+
+  // בית ספר
+  { id:"גלי",   group:"school", closeness:2, phone:"050-666-4400", r:14 },
+  { id:"תמר",   group:"school", closeness:2, phone:"052-777-3311", r:14 },
+  { id:"אורי",  group:"school", closeness:3, phone:"053-888-2222", r:12 },
+  { id:"ניר",   group:"school", closeness:3, phone:"054-999-1133", r:12 },
+
+  // משפחה
+  { id:"אמא",   group:"family", closeness:1, phone:"050-100-2000", r:19 },
+  { id:"אבא",   group:"family", closeness:1, phone:"050-200-3000", r:19 },
+  { id:"נועה",  group:"family", closeness:1, phone:"052-300-4000", r:17 },
+  { id:"יובל",  group:"family", closeness:2, phone:"053-400-5000", r:14 },
+];
+
+const LINKS = [
+  // צחי לכולם
+  ...["דני","מיכה","יוסי","שרה","אלי","רינה","בני","ערן",
+      "גלי","תמר","אורי","ניר","אמא","אבא","נועה","יובל"]
+    .map(t => ({ source:"צחי", target:t })),
+
+  // best friends
+  { source:"דני",  target:"מיכה" },
+  { source:"דני",  target:"יוסי" },
+  { source:"מיכה", target:"יוסי" },
+
+  // work
+  { source:"שרה",  target:"אלי"  },
+  { source:"שרה",  target:"רינה" },
+  { source:"אלי",  target:"בני"  },
+  { source:"רינה", target:"ערן"  },
+  { source:"בני",  target:"ערן"  },
+
+  // school
+  { source:"גלי",  target:"תמר"  },
+  { source:"גלי",  target:"אורי" },
+  { source:"תמר",  target:"ניר"  },
+
+  // family
+  { source:"אמא",  target:"אבא"  },
+  { source:"אמא",  target:"נועה" },
+  { source:"אבא",  target:"יובל" },
+  { source:"נועה", target:"יובל" },
+
+  // cross-group
+  { source:"דני",  target:"שרה"  },
+  { source:"יוסי", target:"גלי"  },
+  { source:"נועה", target:"מיכה" },
+  { source:"אמא",  target:"גלי"  },
+];
+
+// ── Colors ────────────────────────────────────────────
+const COLOR = {
+  0: { fill:"#ffffff", stroke:"#ffffff", glow:"#ffffff" },
+  1: { fill:"#ff6b6b", stroke:"#ff6b6b", glow:"#ff6b6b" },
+  2: { fill:"#ffb347", stroke:"#ffb347", glow:"#ffb347" },
+  3: { fill:"#74b9ff", stroke:"#74b9ff", glow:"#74b9ff" },
+};
+
+const GROUP_NAME = {
+  best:"חברים הכי טובים", work:"חברי עבודה",
+  school:"חברים מבית ספר", family:"משפחה",
+};
+
+// group attraction centers (fractions of w/h)
+const GC = {
+  center:{ fx:.5,  fy:.5  },
+  best:  { fx:.5,  fy:.18 },
+  work:  { fx:.78, fy:.62 },
+  school:{ fx:.22, fy:.72 },
+  family:{ fx:.18, fy:.30 },
+};
+
+// ── SVG Setup ─────────────────────────────────────────
+const svg  = d3.select("#graph");
+const wrap = document.getElementById("graph-wrap");
+let W = wrap.clientWidth, H = wrap.clientHeight;
+
+// defs – glow filter
+const defs = svg.append("defs");
+function mkGlow(id, blur) {
+  const f = defs.append("filter").attr("id", id);
+  f.append("feGaussianBlur").attr("stdDeviation", blur).attr("result","blur");
+  const m = f.append("feMerge");
+  m.append("feMergeNode").attr("in","blur");
+  m.append("feMergeNode").attr("in","SourceGraphic");
+}
+mkGlow("glow",    3.5);
+mkGlow("glow-c",  9);
+
+const root = svg.append("g");
+
+// zoom
+svg.call(d3.zoom().scaleExtent([.4,3.5]).on("zoom", e => root.attr("transform",e.transform)));
+
+// ── Simulation ────────────────────────────────────────
+const sim = d3.forceSimulation(NODES)
+  .force("link", d3.forceLink(LINKS).id(d=>d.id).distance(90).strength(.18))
+  .force("charge", d3.forceManyBody().strength(-230))
+  .force("collision", d3.forceCollide(d=>d.r+14))
+  .force("x", d3.forceX(d => GC[d.group].fx * W).strength(.18))
+  .force("y", d3.forceY(d => GC[d.group].fy * H).strength(.18));
+
+// ── Group labels ──────────────────────────────────────
+const GROUP_LABEL_POS = {
+  best:  { dx:0,   dy:-20 },
+  work:  { dx:20,  dy:0   },
+  school:{ dx:-20, dy:0   },
+  family:{ dx:-20, dy:0   },
+};
+
+// rendered after tick settles – updated on tick for now via data-bound text
+const groupLabelData = Object.entries(GROUP_NAME).map(([g,label])=>({g,label}));
+const glabels = root.append("g")
+  .selectAll("text").data(groupLabelData).join("text")
+  .attr("class","group-tag")
+  .text(d=>d.label);
+
+// ── Links ─────────────────────────────────────────────
+const linkSel = root.append("g").selectAll("line").data(LINKS).join("line")
+  .attr("class","link")
+  .attr("stroke", d => {
+    const s = typeof d.source === "object" ? d.source : NODES.find(n=>n.id===d.source);
+    const t = typeof d.target === "object" ? d.target : NODES.find(n=>n.id===d.target);
+    if (!s||!t) return "#555";
+    const minC = Math.min(s.closeness||99, t.closeness||99);
+    if (minC<=1) return "rgba(255,107,107,.55)";
+    if (minC<=2) return "rgba(255,179,71,.45)";
+    return "rgba(116,185,255,.3)";
+  })
+  .attr("stroke-width", d => {
+    const s = typeof d.source === "object" ? d.source : NODES.find(n=>n.id===d.source);
+    const t = typeof d.target === "object" ? d.target : NODES.find(n=>n.id===d.target);
+    if (!s||!t) return 1;
+    const minC = Math.min(s.closeness||99, t.closeness||99);
+    return minC===1 ? 1.8 : minC===2 ? 1.2 : .7;
+  });
+
+// ── Nodes ─────────────────────────────────────────────
+const nodeSel = root.append("g").selectAll("g").data(NODES).join("g")
+  .attr("class","node")
+  .call(d3.drag()
+    .on("start", (e,d)=>{ if(!e.active) sim.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; })
+    .on("drag",  (e,d)=>{ d.fx=e.x; d.fy=e.y; })
+    .on("end",   (e,d)=>{ if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; })
+  )
+  .on("click", (_,d)=>{ if(d.group!=="center") openPanel(d); });
+
+// outer glow ring (center only)
+nodeSel.filter(d=>d.group==="center")
+  .append("circle")
+  .attr("class","center-ring")
+  .attr("r", 38)
+  .attr("fill","none")
+  .attr("stroke","rgba(255,255,255,.12)")
+  .attr("stroke-width",2);
+
+// main circle
+nodeSel.append("circle")
+  .attr("r", d=>d.r)
+  .attr("fill", d=>{
+    if(d.group==="center") return "rgba(255,255,255,.1)";
+    const c = COLOR[d.closeness];
+    return d.closeness===1 ? c.fill+"cc" : d.closeness===2 ? c.fill+"88" : c.fill+"55";
+  })
+  .attr("stroke", d=> d.group==="center" ? "#fff" : COLOR[d.closeness].stroke)
+  .attr("stroke-width", d=> d.group==="center" ? 2 : 1.5)
+  .attr("filter", d=> d.group==="center" ? "url(#glow-c)" : "url(#glow)");
+
+// label text
+nodeSel.append("text")
+  .text(d=>d.id)
+  .attr("dy","0.05em")
+  .style("font-size", d=> d.group==="center" ? "14px" : "11px")
+  .style("font-weight", d=> d.group==="center" ? "600" : "400")
+  .style("fill", d=> d.group==="center" ? "#fff" : "rgba(255,255,255,.88)");
+
+// ── Tick ──────────────────────────────────────────────
+// group label positions: average of member nodes
+sim.on("tick", ()=>{
+  linkSel
+    .attr("x1", d=>d.source.x).attr("y1", d=>d.source.y)
+    .attr("x2", d=>d.target.x).attr("y2", d=>d.target.y);
+
+  nodeSel.attr("transform", d=>`translate(${d.x},${d.y})`);
+
+  // update group labels to centroid
+  glabels.attr("transform", d=>{
+    const members = NODES.filter(n=>n.group===d.g && n.x);
+    if(!members.length) return "";
+    const cx = members.reduce((s,n)=>s+n.x,0)/members.length;
+    const cy = members.reduce((s,n)=>s+n.y,0)/members.length - 28;
+    return `translate(${cx},${cy})`;
+  }).attr("text-anchor","middle");
+});
+
+// ── Panel ─────────────────────────────────────────────
+function openPanel(d) {
+  document.getElementById("p-name").textContent  = d.id;
+  document.getElementById("p-group").textContent = GROUP_NAME[d.group] || "";
+
+  // dots: closeness 1→3 filled, 2→2 filled, 3→1 filled
+  const dc = document.getElementById("p-dots");
+  dc.innerHTML = "";
+  const filled = 4 - d.closeness;
+  const col    = COLOR[d.closeness].fill;
+  for(let i=1;i<=3;i++){
+    const el = document.createElement("div");
+    el.className = "dot";
+    el.style.background = i<=filled ? col : "rgba(255,255,255,.15)";
+    el.style.boxShadow  = i<=filled ? `0 0 6px ${col}66` : "none";
+    dc.appendChild(el);
+  }
+
+  document.getElementById("p-phone").textContent = d.phone;
+
+  const num = d.phone.replace(/\D/g,"").replace(/^0/,"972");
+  const msg = encodeURIComponent(`היי ${d.id}! מה נשמע?`);
+  document.getElementById("p-wa").href = `https://wa.me/${num}?text=${msg}`;
+
+  document.getElementById("panel").classList.add("open");
+}
+
+function closePanel() {
+  document.getElementById("panel").classList.remove("open");
+}
+
+// ── Resize ────────────────────────────────────────────
+window.addEventListener("resize", ()=>{
+  W = wrap.clientWidth; H = wrap.clientHeight;
+  sim.force("x", d3.forceX(d=>GC[d.group].fx*W).strength(.18));
+  sim.force("y", d3.forceY(d=>GC[d.group].fy*H).strength(.18));
+  sim.alpha(.3).restart();
+});
+</script>
+</body>
+</html>
