@@ -36,7 +36,7 @@ input,select{font-family:inherit}
 .exp-wrap{position:relative;flex-shrink:0}
 #btnExport{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;padding:5px 10px;border-radius:6px;font-size:12px;white-space:nowrap;transition:background .15s}
 #btnExport:hover{background:rgba(37,211,102,.2)}
-.exp-menu{position:absolute;top:calc(100% + 5px);left:0;background:var(--surf);border:1px solid var(--brd);border-radius:8px;overflow:hidden;min-width:148px;z-index:300;box-shadow:0 4px 18px rgba(0,0,0,.5);display:none}
+.exp-menu{position:fixed;background:var(--surf);border:1px solid var(--brd);border-radius:8px;overflow:hidden;min-width:148px;z-index:9999;box-shadow:0 4px 18px rgba(0,0,0,.5);display:none}
 .exp-menu button{display:block;width:100%;padding:9px 14px;background:none;border:none;color:var(--txt);font-size:13px;text-align:right;cursor:pointer;white-space:nowrap;transition:background .12s}
 .exp-menu button:hover{background:rgba(255,255,255,.08)}
 
@@ -661,7 +661,12 @@ document.getElementById("file-input").addEventListener("change",e=>{
 function toggleExpMenu(e){
   e.stopPropagation();
   const m=document.getElementById("expMenu");
-  m.style.display=m.style.display==="block"?"none":"block";
+  if(m.style.display==="block"){m.style.display="none";return;}
+  const r=e.currentTarget.getBoundingClientRect();
+  m.style.top=(r.bottom+4)+"px";
+  m.style.right=(window.innerWidth-r.right)+"px";
+  m.style.left="auto";
+  m.style.display="block";
 }
 document.addEventListener("click",e=>{
   if(!document.getElementById("expWrap").contains(e.target))
