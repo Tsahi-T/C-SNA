@@ -253,6 +253,16 @@ const SAMPLE=`owner:צחי
 נועה|family|1|052-300-4000
 יובל|family,best|2|053-400-5000`;
 
+// ── Node radius (dynamic by name length) ─────────────────
+function computeR(name, closeness){
+  const base = closeness===1?17:closeness===2?14:12;
+  const parts = name.split(' ');
+  const maxLen = Math.max(...parts.map(p=>p.length));
+  const hw = maxLen * 3.6;          // half text-width estimate (px)
+  const vh = parts.length>1 ? 7:0;  // vertical offset for 2 lines
+  return Math.max(base, Math.round(Math.sqrt(hw*hw + vh*vh) + 6));
+}
+
 // ── State ─────────────────────────────────────────────────
 let nodes=[],links=[];
 let activeC=new Set([1,2,3]),activeGr="",searchQ="",view="graph",editId=null;
@@ -267,7 +277,7 @@ function parseTXT(txt){
     if(!nm||!grp)continue;
     const c=parseInt(cls)||3;
     const groups=grp.split(',').map(g=>g.trim().toLowerCase()).filter(Boolean);
-    contacts.push({id:nm,groups,closeness:c,phone:ph||"",r:c===1?17:c===2?14:12});
+    contacts.push({id:nm,groups,closeness:c,phone:ph||"",r:computeR(nm,c)});
   }
   return [{id:owner,group:"center",closeness:0,phone:null,r:26},...contacts];
 }
@@ -402,10 +412,27 @@ function buildGraph(){
     .attr("stroke-width",d=>d.group==="center"?2:1.5)
     .attr("filter",d=>d.group==="center"?"url(#gc)":"url(#gn)");
 
-  nodSel.append("text").text(d=>d.id)
-    .style("font-size",d=>d.group==="center"?"14px":"11px")
-    .style("font-weight",d=>d.group==="center"?"600":"400")
-    .style("fill","rgba(255,255,255,.9)");
+  nodSel.each(function(d){
+    const el=d3.select(this);
+    const isC=d.group==="center";
+    const parts=isC?[d.id]:d.id.split(' ');
+    const fs=isC?"14px":"11px", fw=isC?"600":"400";
+    const fill="rgba(255,255,255,.9)";
+    if(parts.length===1){
+      el.append("text").text(parts[0])
+        .attr("text-anchor","middle").attr("dominant-baseline","middle")
+        .style("font-size",fs).style("font-weight",fw).style("fill",fill)
+        .attr("pointer-events","none");
+    } else {
+      parts.forEach((p,i)=>{
+        el.append("text").text(p)
+          .attr("text-anchor","middle").attr("y",(i-(parts.length-1)/2)*11)
+          .attr("dominant-baseline","middle")
+          .style("font-size",fs).style("font-weight",fw).style("fill",fill)
+          .attr("pointer-events","none");
+      });
+    }
+  });
 
   sim.on("tick",tick);
   applyFilter();
@@ -553,7 +580,7 @@ function saveCurrent(){
   if(!groups.length){alert("בחרי לפחות קבוצה אחת");return;}
   const c=parseInt(document.querySelector(".csel-btn.on")?.dataset.c||"3");
   const phone=document.getElementById("pPhoneInput").value.trim();
-  const nd={id:name,groups,closeness:c,phone,r:c===1?17:c===2?14:12};
+  const nd={id:name,groups,closeness:c,phone,r:computeR(name,c)};
   if(editId){
     const idx=nodes.findIndex(n=>n.id===editId);
     if(idx>-1){const{x,y,vx,vy}=nodes[idx];nodes[idx]={...nd,x,y,vx:vx||0,vy:vy||0};}
