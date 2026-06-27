@@ -2,286 +2,214 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>C·SNA – מעגלי חברים</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>C·SNA</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
-/* ── Tokens ─────────────────────────────────────── */
-:root {
-  --bg:       #07071a;
-  --surf:     rgba(12,12,38,.97);
-  --border:   rgba(140,140,240,.2);
-  --text:     rgba(225,225,255,.88);
-  --muted:    rgba(200,200,255,.38);
-  --accent:   #7b7eff;
-  --c1:       #ff6b6b;
-  --c2:       #ffb347;
-  --c3:       #74b9ff;
-  --hdr:      52px;
-}
-
-/* ── Reset ──────────────────────────────────────── */
+:root{--bg:#07071a;--surf:rgba(12,12,38,.97);--brd:rgba(140,140,240,.2);--txt:rgba(225,225,255,.88);--muted:rgba(200,200,255,.38);--acc:#7b7eff;--c1:#ff6b6b;--c2:#ffb347;--c3:#74b9ff;--hdr:52px}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-serif;overflow:hidden;height:100vh}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',Arial,sans-serif;overflow:hidden;height:100vh}
 button{cursor:pointer;font-family:inherit}
 input,select{font-family:inherit}
 
-/* ── Header ─────────────────────────────────────── */
-#hdr{
-  position:fixed;top:0;right:0;left:0;height:var(--hdr);
-  background:var(--surf);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:10px;padding:0 14px;z-index:200;
-}
-#logo{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:.06em;white-space:nowrap}
-
-.sep{width:1px;height:24px;background:var(--border);flex-shrink:0}
-
-.hbtn{
-  background:rgba(123,126,255,.13);border:1px solid var(--border);
-  color:var(--accent);padding:5px 11px;border-radius:6px;font-size:12px;
-  white-space:nowrap;transition:background .15s
-}
+/* ── Header ── */
+#hdr{position:fixed;top:0;right:0;left:0;height:var(--hdr);background:var(--surf);border-bottom:1px solid var(--brd);display:flex;align-items:center;gap:8px;padding:0 12px;z-index:200;overflow-x:auto}
+#hdr::-webkit-scrollbar{display:none}
+#logo{font-size:15px;font-weight:700;color:var(--acc);letter-spacing:.06em;white-space:nowrap;flex-shrink:0}
+.sep{width:1px;height:22px;background:var(--brd);flex-shrink:0}
+.hbtn{background:rgba(123,126,255,.13);border:1px solid var(--brd);color:var(--acc);padding:5px 10px;border-radius:6px;font-size:12px;white-space:nowrap;flex-shrink:0;transition:background .15s}
 .hbtn:hover{background:rgba(123,126,255,.28)}
 #file-input{display:none}
-
-/* filters */
-#filters{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+#fbar{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
 .fl{font-size:11px;color:var(--muted);white-space:nowrap}
-#fg{
-  background:rgba(255,255,255,.06);border:1px solid var(--border);
-  color:var(--text);padding:4px 8px;border-radius:6px;font-size:12px;outline:none
-}
+#fg{background:rgba(255,255,255,.06);border:1px solid var(--brd);color:var(--txt);padding:4px 6px;border-radius:6px;font-size:12px;outline:none}
 #fg option{background:#111133}
-.fcb-wrap{display:flex;gap:4px}
-.fcb{
-  width:26px;height:26px;border-radius:50%;border:1.5px solid;
-  background:transparent;font-size:11px;font-weight:700;transition:all .15s
-}
-.fcb[data-c="1"]{border-color:var(--c1);color:var(--c1)}
-.fcb[data-c="2"]{border-color:var(--c2);color:var(--c2)}
-.fcb[data-c="3"]{border-color:var(--c3);color:var(--c3)}
-.fcb.on[data-c="1"]{background:var(--c1);color:#111}
-.fcb.on[data-c="2"]{background:var(--c2);color:#111}
-.fcb.on[data-c="3"]{background:var(--c3);color:#111}
-#fsearch{
-  background:rgba(255,255,255,.06);border:1px solid var(--border);
-  color:var(--text);padding:4px 10px;border-radius:6px;font-size:12px;
-  outline:none;width:110px
-}
+.fcbs{display:flex;gap:3px}
+.fcb{width:24px;height:24px;border-radius:50%;border:1.5px solid;background:transparent;font-size:10px;font-weight:700;transition:all .12s}
+.fcb[data-c="1"]{border-color:var(--c1);color:var(--c1)}.fcb[data-c="2"]{border-color:var(--c2);color:var(--c2)}.fcb[data-c="3"]{border-color:var(--c3);color:var(--c3)}
+.fcb.on[data-c="1"]{background:var(--c1);color:#111}.fcb.on[data-c="2"]{background:var(--c2);color:#111}.fcb.on[data-c="3"]{background:var(--c3);color:#111}
+#fsearch{background:rgba(255,255,255,.06);border:1px solid var(--brd);color:var(--txt);padding:4px 8px;border-radius:6px;font-size:12px;outline:none;width:100px}
 #fsearch::placeholder{color:var(--muted)}
+.vtog{display:flex;border:1px solid var(--brd);border-radius:6px;overflow:hidden;flex-shrink:0}
+.vbtn{padding:5px 10px;font-size:12px;background:transparent;border:none;color:var(--muted);transition:all .15s}
+.vbtn.on{background:rgba(123,126,255,.22);color:var(--acc)}
+#btnExport{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;padding:5px 10px;border-radius:6px;font-size:12px;white-space:nowrap;flex-shrink:0;transition:background .15s}
+#btnExport:hover{background:rgba(37,211,102,.2)}
 
-/* view toggle */
-.vtog{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-right:auto}
-.vbtn{
-  padding:5px 12px;font-size:12px;background:transparent;border:none;
-  color:var(--muted);transition:all .15s
-}
-.vbtn.on{background:rgba(123,126,255,.22);color:var(--accent)}
-
-#btnExport{
-  background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);
-  color:#25d366;padding:5px 11px;border-radius:6px;font-size:12px;
-  white-space:nowrap;transition:background .15s
-}
-#btnExport:hover{background:rgba(37,211,102,.22)}
-
-/* ── Graph view ─────────────────────────────────── */
+/* ── Graph ── */
 #gview{position:fixed;top:var(--hdr);left:0;right:0;bottom:0}
 svg{width:100%;height:100%}
-
 .hull{stroke-width:1.5}
 .lnk{stroke-opacity:.38}
 .node circle{transition:opacity .25s,filter .12s;cursor:pointer}
-.node circle:hover{filter:brightness(1.5)}
-.node text{
-  text-anchor:middle;dominant-baseline:middle;
-  pointer-events:none;font-family:Arial,sans-serif
-}
-.node.dim circle{opacity:.1}
-.node.dim text{opacity:.08}
+.node circle:hover{filter:brightness(1.55)}
+.node text{text-anchor:middle;dominant-baseline:middle;pointer-events:none;font-family:Arial,sans-serif}
+.node.dim circle{opacity:.1}.node.dim text{opacity:.08}
 .lnk.dim{stroke-opacity:.05}
 
-.hl-g rect{rx:10;ry:10}
-.hl-g text{pointer-events:none}
-
-/* ── Table view ─────────────────────────────────── */
-#tview{
-  display:none;position:fixed;top:var(--hdr);left:0;right:0;bottom:0;
-  overflow-y:auto;padding:18px
-}
+/* ── Table ── */
+#tview{display:none;position:fixed;top:var(--hdr);left:0;right:0;bottom:0;overflow-y:auto;padding:16px}
 #tview::-webkit-scrollbar{width:5px}
 #tview::-webkit-scrollbar-thumb{background:rgba(140,140,240,.3);border-radius:3px}
-
 .tbar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-#btnAdd{
-  background:rgba(123,126,255,.13);border:1px solid var(--border);
-  color:var(--accent);padding:6px 14px;border-radius:6px;font-size:13px
-}
-#btnAdd:hover{background:rgba(123,126,255,.28)}
+#btnAddRow{background:rgba(123,126,255,.13);border:1px solid var(--brd);color:var(--acc);padding:6px 13px;border-radius:6px;font-size:13px}
+#btnAddRow:hover{background:rgba(123,126,255,.28)}
 #rowCount{font-size:12px;color:var(--muted)}
-
 table{width:100%;border-collapse:collapse}
-th{
-  padding:7px 10px;font-size:10px;letter-spacing:.07em;
-  color:var(--muted);border-bottom:1px solid var(--border);
-  text-align:right;white-space:nowrap
-}
-td{padding:4px 6px;border-bottom:1px solid rgba(140,140,240,.08)}
-
-.ci{
-  background:rgba(255,255,255,.05);border:1px solid transparent;
-  color:var(--text);padding:5px 8px;border-radius:5px;
-  font-size:13px;width:100%;outline:none;transition:border-color .15s
-}
-.ci:focus{border-color:var(--accent);background:rgba(255,255,255,.09)}
-
-.cs{
-  background:rgba(255,255,255,.05);border:1px solid transparent;
-  color:var(--text);padding:5px 6px;border-radius:5px;
-  font-size:13px;outline:none;cursor:pointer;width:100%
-}
-.cs:focus{border-color:var(--accent)}
-.cs option{background:#111133}
-
-.wa-sm{
-  display:inline-flex;align-items:center;justify-content:center;
-  background:#25d366;border:none;color:#fff;
-  width:30px;height:30px;border-radius:50%;font-size:14px;
-  text-decoration:none;transition:background .15s;flex-shrink:0
-}
+th{padding:7px 8px;font-size:10px;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--brd);text-align:right;white-space:nowrap}
+td{padding:4px 5px;border-bottom:1px solid rgba(140,140,240,.08);vertical-align:middle}
+.ci{background:rgba(255,255,255,.05);border:1px solid transparent;color:var(--txt);padding:5px 7px;border-radius:5px;font-size:13px;width:100%;outline:none;transition:border-color .15s}
+.ci:focus{border-color:var(--acc);background:rgba(255,255,255,.09)}
+.cs{background:rgba(255,255,255,.05);border:1px solid transparent;color:var(--txt);padding:5px 4px;border-radius:5px;font-size:12px;outline:none;cursor:pointer;width:100%}
+.cs:focus{border-color:var(--acc)}.cs option{background:#111133}
+.wa-sm{display:inline-flex;align-items:center;justify-content:center;background:#25d366;border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:13px;text-decoration:none;transition:background .15s;flex-shrink:0}
 .wa-sm:hover{background:#1cb254}
-
-.del{
-  background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.28);
-  color:#e74c3c;width:28px;height:28px;border-radius:5px;font-size:16px;
-  display:inline-flex;align-items:center;justify-content:center
-}
+.del{background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);color:#e74c3c;width:26px;height:26px;border-radius:5px;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
 .del:hover{background:rgba(231,76,60,.28)}
+.edit-btn{background:rgba(123,126,255,.1);border:1px solid var(--brd);color:var(--acc);width:26px;height:26px;border-radius:5px;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+.edit-btn:hover{background:rgba(123,126,255,.28)}
+.group-pills{display:flex;flex-wrap:wrap;gap:3px}
+.gpill{font-size:10px;padding:1px 6px;border-radius:8px;border:1px solid;white-space:nowrap}
 
-/* ── Panel ──────────────────────────────────────── */
-#panel{
-  position:fixed;top:var(--hdr);right:0;
-  width:268px;height:calc(100vh - var(--hdr));
-  background:var(--surf);border-left:1px solid var(--border);
-  padding:22px 18px 18px;
-  transform:translateX(110%);
-  transition:transform .28s cubic-bezier(.4,0,.2,1);
-  z-index:150;display:flex;flex-direction:column;gap:0
-}
+/* ── Panel ── */
+#panel{position:fixed;top:var(--hdr);right:0;width:285px;height:calc(100vh - var(--hdr));background:var(--surf);border-left:1px solid var(--brd);overflow-y:auto;transform:translateX(110%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:150;display:flex;flex-direction:column}
+#panel::-webkit-scrollbar{width:4px}
+#panel::-webkit-scrollbar-thumb{background:rgba(140,140,240,.3);border-radius:2px}
 #panel.open{transform:translateX(0)}
-#pClose{
-  position:absolute;top:10px;left:12px;
-  background:none;border:none;color:var(--muted);font-size:24px;line-height:1
-}
+.ph{display:flex;align-items:center;padding:12px 14px 10px;border-bottom:1px solid var(--brd);gap:8px;flex-shrink:0;position:sticky;top:0;background:var(--surf);z-index:1}
+#pClose{background:none;border:none;color:var(--muted);font-size:22px;line-height:1;flex-shrink:0}
 #pClose:hover{color:#fff}
-#pName{font-size:24px;color:#fff;margin-bottom:4px}
-#pGtag{
-  display:inline-block;font-size:11px;padding:2px 9px;
-  border-radius:10px;margin-bottom:16px
-}
-.ps{font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:5px}
-.dots{display:flex;gap:6px;margin-bottom:16px}
-.dot{width:11px;height:11px;border-radius:50%}
-#pPhone{
-  font-size:15px;color:#8ecfff;direction:ltr;
-  text-align:right;display:block;margin-bottom:20px
-}
-.wabtn{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  background:#25d366;color:#fff;border:none;padding:11px;
-  border-radius:22px;font-size:14px;text-decoration:none;
-  transition:background .15s
-}
+.ph-acts{display:flex;gap:6px;margin-right:auto}
+.btn-del{background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.3);color:#e74c3c;padding:5px 10px;border-radius:6px;font-size:12px;transition:background .15s}
+.btn-del:hover{background:rgba(231,76,60,.28)}
+.btn-save{background:rgba(123,126,255,.18);border:1px solid rgba(123,126,255,.4);color:#a0a0ff;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;transition:all .15s}
+.btn-save:hover{background:rgba(123,126,255,.32);color:#fff}
+.pform{padding:14px;flex:1}
+#pNameInput{width:100%;background:none;border:none;border-bottom:1px solid var(--brd);color:#fff;font-size:22px;outline:none;padding:0 0 6px;margin-bottom:14px;transition:border-color .15s}
+#pNameInput:focus{border-color:var(--acc)}
+#pNameInput::placeholder{color:var(--muted);font-size:18px}
+.ps{font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.mt{margin-top:14px}
+.pgg{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.gcb-lbl{display:flex;align-items:center;gap:5px;padding:5px 7px;border-radius:6px;border:1px solid var(--brd);cursor:pointer;font-size:11px;transition:all .12s;user-select:none}
+.gcb-lbl:hover{background:rgba(255,255,255,.05)}
+.gcb-lbl.on{background:rgba(255,255,255,.08)}
+.gcb-lbl input{display:none}
+.gcb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.add-grp-btn{background:none;border:none;color:var(--muted);font-size:11px;padding:2px 4px;text-decoration:underline;cursor:pointer}
+.add-grp-btn:hover{color:var(--acc)}
+.csel{display:flex;gap:5px}
+.csel-btn{flex:1;padding:6px 2px;border-radius:7px;border:1.5px solid;background:transparent;font-size:11px;font-weight:600;transition:all .12s;cursor:pointer;text-align:center}
+.csel-btn[data-c="1"]{border-color:var(--c1);color:var(--c1)}.csel-btn[data-c="2"]{border-color:var(--c2);color:var(--c2)}.csel-btn[data-c="3"]{border-color:var(--c3);color:var(--c3)}
+.csel-btn.on[data-c="1"]{background:var(--c1);color:#111}.csel-btn.on[data-c="2"]{background:var(--c2);color:#111}.csel-btn.on[data-c="3"]{background:var(--c3);color:#111}
+#pPhoneInput{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--brd);color:var(--txt);padding:7px 10px;border-radius:7px;font-size:14px;outline:none;direction:ltr;text-align:right;transition:border-color .15s}
+#pPhoneInput:focus{border-color:var(--acc)}
+.wabtn{display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border:none;padding:11px;border-radius:22px;font-size:14px;text-decoration:none;transition:background .15s;margin-top:14px}
 .wabtn:hover{background:#1cb254}
+.wabtn.off{background:#333;cursor:default;pointer-events:none;color:rgba(255,255,255,.3)}
 
-/* ── Legend ─────────────────────────────────────── */
-#legend{
-  position:fixed;bottom:16px;left:16px;
-  background:var(--surf);border:1px solid var(--border);
-  border-radius:10px;padding:10px 14px;font-size:12px;z-index:100
-}
+/* ── FAB ── */
+.fab{position:fixed;bottom:22px;left:22px;width:48px;height:48px;border-radius:50%;background:var(--acc);color:#fff;border:none;font-size:28px;line-height:48px;text-align:center;box-shadow:0 4px 16px rgba(123,126,255,.45);z-index:100;transition:transform .15s,box-shadow .15s}
+.fab:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(123,126,255,.6)}
+
+/* ── Legend ── */
+#legend{position:fixed;bottom:16px;right:16px;background:var(--surf);border:1px solid var(--brd);border-radius:10px;padding:10px 13px;font-size:12px;z-index:100}
 .leg{display:flex;align-items:center;gap:7px;margin-bottom:4px}
 .leg:last-child{margin-bottom:0}
-.ldot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 
-/* ── Center pulse ───────────────────────────────── */
-.cpulse{animation:cpulse 3s ease-in-out infinite;transform-origin:center}
-@keyframes cpulse{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.6;transform:scale(1.1)}}
+/* ── Ripple rings (center node) ── */
+.ring{fill:none;stroke:rgba(255,255,255,.35);stroke-width:1.5}
+@keyframes rpl{0%{transform:scale(.85);opacity:.6}100%{transform:scale(1.7);opacity:0}}
+.ring1{animation:rpl 2.6s ease-out infinite}
+.ring2{animation:rpl 2.6s ease-out infinite .87s}
+.ring3{animation:rpl 2.6s ease-out infinite 1.74s}
+
+/* ── Responsive ── */
+@media(max-width:640px){
+  #fbar{display:none}
+  #panel{width:100%;top:auto;bottom:0;right:0;left:0;height:72vh;border-left:none;border-top:1px solid var(--brd);border-radius:16px 16px 0 0;transform:translateY(110%)}
+  #panel.open{transform:translateY(0)}
+  #legend{display:none}
+  .fab{bottom:88px}
+}
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <div id="hdr">
   <span id="logo">C · SNA</span>
   <div class="sep"></div>
-
-  <button class="hbtn" id="btnLoad">📂 טעינת קובץ</button>
-  <input type="file" id="file-input" accept=".txt,.csv">
-
+  <button class="hbtn" id="btnLoad">📂 טעינה</button>
+  <input type="file" id="file-input" accept=".txt">
   <div class="sep"></div>
-
-  <div id="filters">
+  <div id="fbar">
     <span class="fl">קבוצה:</span>
     <select id="fg"><option value="">הכל</option></select>
-
     <span class="fl">קרבה:</span>
-    <div class="fcb-wrap">
+    <div class="fcbs">
       <button class="fcb on" data-c="1">1</button>
       <button class="fcb on" data-c="2">2</button>
       <button class="fcb on" data-c="3">3</button>
     </div>
-
-    <input id="fsearch" placeholder="חיפוש שם...">
+    <input id="fsearch" placeholder="חיפוש...">
   </div>
-
   <div class="vtog">
     <button class="vbtn on" id="btnGV">🕸 גרף</button>
     <button class="vbtn"    id="btnTV">📋 טבלה</button>
   </div>
-
-  <button id="btnExport">יצוא TXT ↓</button>
+  <button id="btnExport">יצוא ↓</button>
 </div>
 
-<!-- Graph -->
 <div id="gview"><svg id="graph"></svg></div>
 
-<!-- Table -->
 <div id="tview">
   <div class="tbar">
-    <button id="btnAdd">+ הוסף חבר</button>
+    <button id="btnAddRow">+ הוסף חבר</button>
     <span id="rowCount"></span>
   </div>
   <table>
-    <thead>
-      <tr>
-        <th>שם</th><th>קבוצה</th><th>קרבה</th>
-        <th>טלפון</th><th style="text-align:center">WA</th><th></th>
-      </tr>
-    </thead>
+    <thead><tr>
+      <th>שם</th><th>קבוצות</th><th>קרבה</th><th>טלפון</th>
+      <th style="text-align:center">WA</th><th></th>
+    </tr></thead>
     <tbody id="tbody"></tbody>
   </table>
 </div>
 
-<!-- Side panel -->
 <div id="panel">
-  <button id="pClose" onclick="closePanel()">×</button>
-  <div id="pName"></div>
-  <span id="pGtag"></span>
-  <div class="ps">קרבה</div>
-  <div class="dots" id="pDots"></div>
-  <div class="ps">טלפון</div>
-  <span id="pPhone"></span>
-  <a class="wabtn" id="pWa" href="#" target="_blank">
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="white" style="flex-shrink:0">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.12 1.533 5.849L.054 23.25a.75.75 0 00.921.921l5.4-1.479A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 01-5.003-1.384l-.36-.214-3.733 1.021 1.021-3.733-.214-.36A9.712 9.712 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
-    </svg>
-    שלח הודעה בוואטסאפ
-  </a>
+  <div class="ph">
+    <button id="pClose" onclick="closePanel()">×</button>
+    <div class="ph-acts">
+      <button class="btn-del" id="pDel" onclick="deleteCurrent()">מחק</button>
+      <button class="btn-save" id="pSave" onclick="saveCurrent()">שמור</button>
+    </div>
+  </div>
+  <div class="pform">
+    <input id="pNameInput" placeholder="שם..." autocomplete="off">
+    <div class="ps mt">קבוצות</div>
+    <div id="pGG" class="pgg"></div>
+    <button class="add-grp-btn" onclick="promptAddGroup(true)">+ קבוצה חדשה</button>
+    <div class="ps mt">קרבה</div>
+    <div class="csel">
+      <button class="csel-btn" data-c="1">קרוב מאוד</button>
+      <button class="csel-btn" data-c="2">קרוב</button>
+      <button class="csel-btn" data-c="3">מכר</button>
+    </div>
+    <div class="ps mt">טלפון</div>
+    <input id="pPhoneInput" placeholder="050-000-0000" dir="ltr" autocomplete="off">
+    <a class="wabtn" id="pWa" href="#" target="_blank">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white" style="flex-shrink:0">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.558 4.12 1.533 5.849L.054 23.25a.75.75 0 00.921.921l5.4-1.479A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 01-5.003-1.384l-.36-.214-3.733 1.021 1.021-3.733-.214-.36A9.712 9.712 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+      </svg>
+      שלח וואטסאפ
+    </a>
+  </div>
 </div>
 
-<!-- Legend -->
+<button class="fab" id="fab" onclick="openPanel(null)">+</button>
+
 <div id="legend">
   <div class="leg"><div class="ldot" style="background:var(--c1)"></div>קרוב מאוד</div>
   <div class="leg"><div class="ldot" style="background:var(--c2)"></div>קרוב</div>
@@ -289,236 +217,192 @@ td{padding:4px 6px;border-bottom:1px solid rgba(140,140,240,.08)}
 </div>
 
 <script>
-// ══════════════════════════════════════════════════
-// CONSTANTS
-// ══════════════════════════════════════════════════
-const GM = {
-  best:      {label:"חברים קרובים",  color:"#a29bfe", bg:"rgba(162,155,254,.09)", sk:"rgba(162,155,254,.32)"},
-  work:      {label:"עבודה",          color:"#00cec9", bg:"rgba(0,206,201,.08)",   sk:"rgba(0,206,201,.28)" },
-  school:    {label:"בית ספר",        color:"#fdcb6e", bg:"rgba(253,203,110,.08)", sk:"rgba(253,203,110,.28)"},
-  family:    {label:"משפחה",          color:"#ff7675", bg:"rgba(255,118,117,.08)", sk:"rgba(255,118,117,.28)"},
-  neighbors: {label:"שכנים",          color:"#55efc4", bg:"rgba(85,239,196,.08)",  sk:"rgba(85,239,196,.28)" },
-  other:     {label:"אחר",            color:"#b2bec3", bg:"rgba(178,190,195,.08)", sk:"rgba(178,190,195,.28)"},
+// ── Group metadata (mutable) ──────────────────────────────
+let GM = {
+  best:      {label:"חברים קרובים",  color:"#a29bfe",bg:"rgba(162,155,254,.09)",sk:"rgba(162,155,254,.32)"},
+  work:      {label:"עבודה",          color:"#00cec9",bg:"rgba(0,206,201,.08)",  sk:"rgba(0,206,201,.28)"},
+  school:    {label:"בית ספר",        color:"#fdcb6e",bg:"rgba(253,203,110,.08)",sk:"rgba(253,203,110,.28)"},
+  family:    {label:"משפחה",          color:"#ff7675",bg:"rgba(255,118,117,.08)",sk:"rgba(255,118,117,.28)"},
+  neighbors: {label:"שכנים",          color:"#55efc4",bg:"rgba(85,239,196,.08)", sk:"rgba(85,239,196,.28)"},
+  other:     {label:"אחר",            color:"#b2bec3",bg:"rgba(178,190,195,.08)",sk:"rgba(178,190,195,.28)"},
 };
-const gm = g => GM[g] || {label:g, color:"#b2bec3", bg:"rgba(178,190,195,.08)", sk:"rgba(178,190,195,.28)"};
+const XCLR=[
+  {color:"#fd79a8",bg:"rgba(253,121,168,.09)",sk:"rgba(253,121,168,.3)"},
+  {color:"#e17055",bg:"rgba(225,112,85,.09)", sk:"rgba(225,112,85,.3)"},
+  {color:"#6c5ce7",bg:"rgba(108,92,231,.09)", sk:"rgba(108,92,231,.3)"},
+  {color:"#fab1a0",bg:"rgba(250,177,160,.09)",sk:"rgba(250,177,160,.3)"},
+];
+let xci=0;
+const gm=k=>GM[k]||{label:k,color:"#888",bg:"rgba(136,136,136,.09)",sk:"rgba(136,136,136,.28)"};
+const CC={0:"#ffffff",1:"#ff6b6b",2:"#ffb347",3:"#74b9ff"};
 
-const CC = {0:"#ffffff", 1:"#ff6b6b", 2:"#ffb347", 3:"#74b9ff"};
-
-const SAMPLE = `owner:צחי
-# שם|קבוצה|קרבה|טלפון
+const SAMPLE=`owner:צחי
+# שם|קבוצות|קרבה|טלפון
 דני|best|1|050-111-2233
 מיכה|best|1|052-333-4455
 יוסי|best|2|053-555-6677
-שרה|work|2|054-111-9900
+שרה|work,best|2|054-111-9900
 אלי|work|3|055-222-8811
 רינה|work|2|056-333-7722
 בני|work|3|057-444-6633
-ערן|work|3|058-555-5544
 גלי|school|2|050-666-4400
 תמר|school|2|052-777-3311
 אורי|school|3|053-888-2222
-ניר|school|3|054-999-1133
 אמא|family|1|050-100-2000
 אבא|family|1|050-200-3000
 נועה|family|1|052-300-4000
-יובל|family|2|053-400-5000`;
+יובל|family,best|2|053-400-5000`;
 
-// ══════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════
-let nodes = [], links = [];
-let activeC  = new Set([1,2,3]);
-let activeGr = "";
-let searchQ  = "";
-let view     = "graph";
+// ── State ─────────────────────────────────────────────────
+let nodes=[],links=[];
+let activeC=new Set([1,2,3]),activeGr="",searchQ="",view="graph",editId=null;
 
-// ══════════════════════════════════════════════════
-// PARSER
-// ══════════════════════════════════════════════════
-function parseTXT(txt) {
-  const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(l=>l&&!l.startsWith('#'));
-  let owner = "אני";
-  const contacts = [];
-  for (const l of lines) {
-    if (/^owner:/i.test(l)) { owner = l.slice(6).trim(); continue; }
-    const [name,group,cls,phone] = l.split('|').map(p=>p.trim());
-    if (!name||!group) continue;
-    const c = parseInt(cls)||3;
-    contacts.push({id:name, group:group.toLowerCase(), closeness:c,
-      phone:phone||"", r: c===1?17 : c===2?14 : 12});
+// ── Parse ─────────────────────────────────────────────────
+function parseTXT(txt){
+  const lines=txt.split(/\r?\n/).map(l=>l.trim()).filter(l=>l&&!l.startsWith('#'));
+  let owner="אני";const contacts=[];
+  for(const l of lines){
+    if(/^owner:/i.test(l)){owner=l.slice(6).trim();continue;}
+    const [nm,grp,cls,ph]=l.split('|').map(p=>p?.trim());
+    if(!nm||!grp)continue;
+    const c=parseInt(cls)||3;
+    const groups=grp.split(',').map(g=>g.trim().toLowerCase()).filter(Boolean);
+    contacts.push({id:nm,groups,closeness:c,phone:ph||"",r:c===1?17:c===2?14:12});
   }
-  return [{id:owner, group:"center", closeness:0, phone:null, r:26}, ...contacts];
+  return [{id:owner,group:"center",closeness:0,phone:null,r:26},...contacts];
 }
 
-// ══════════════════════════════════════════════════
-// LINK GENERATOR
-// ══════════════════════════════════════════════════
-function genLinks(ns) {
-  const ls = [];
-  const owner = ns.find(n=>n.group==="center");
-  if (!owner) return ls;
-  const contacts = ns.filter(n=>n.group!=="center");
-
-  // hub: owner → all
-  contacts.forEach(c => ls.push({source:owner.id, target:c.id, kind:"hub", w:4-c.closeness}));
-
-  // within group
-  const byG = {};
-  contacts.forEach(c=>{(byG[c.group]||(byG[c.group]=[])).push(c)});
-  Object.values(byG).forEach(ms=>{
-    for(let i=0;i<ms.length;i++)
-      for(let j=i+1;j<ms.length;j++) {
-        const minC = Math.min(ms[i].closeness,ms[j].closeness);
-        if(minC<=2||ms.length<=4) ls.push({source:ms[i].id,target:ms[j].id,kind:"peer",w:2});
-      }
+// ── Links ─────────────────────────────────────────────────
+function genLinks(ns){
+  const ls=[];
+  const owner=ns.find(n=>n.group==="center");if(!owner)return ls;
+  const contacts=ns.filter(n=>n.groups);
+  contacts.forEach(c=>ls.push({source:owner.id,target:c.id,kind:"hub",w:4-c.closeness}));
+  const allGs=[...new Set(contacts.flatMap(c=>c.groups||[]))];
+  const seen=new Set();
+  allGs.forEach(g=>{
+    const ms=contacts.filter(c=>(c.groups||[]).includes(g));
+    for(let i=0;i<ms.length;i++)for(let j=i+1;j<ms.length;j++){
+      const key=[ms[i].id,ms[j].id].sort().join("||");
+      if(seen.has(key))continue;
+      const minC=Math.min(ms[i].closeness,ms[j].closeness);
+      if(minC<=2||ms.length<=4){seen.add(key);ls.push({source:ms[i].id,target:ms[j].id,kind:"peer",w:2});}
+    }
   });
-
-  // cross-group: closeness-1 members bridge groups
-  const gks = Object.keys(byG);
-  const c1g = {};
-  gks.forEach(g=>{c1g[g]=byG[g].filter(m=>m.closeness===1)});
-  for(let i=0;i<gks.length;i++)
-    for(let j=i+1;j<gks.length;j++)
-      if(c1g[gks[i]].length&&c1g[gks[j]].length)
-        ls.push({source:c1g[gks[i]][0].id,target:c1g[gks[j]][0].id,kind:"cross",w:1});
-
+  const c1g={};
+  allGs.forEach(g=>{c1g[g]=contacts.filter(c=>(c.groups||[]).includes(g)&&c.closeness===1);});
+  for(let i=0;i<allGs.length;i++)for(let j=i+1;j<allGs.length;j++){
+    if(c1g[allGs[i]]?.length&&c1g[allGs[j]]?.length){
+      const key=[c1g[allGs[i]][0].id,c1g[allGs[j]][0].id].sort().join("||");
+      if(!seen.has(key)){seen.add(key);ls.push({source:c1g[allGs[i]][0].id,target:c1g[allGs[j]][0].id,kind:"cross",w:1});}
+    }
+  }
   return ls;
 }
 
-// ══════════════════════════════════════════════════
-// FILTER
-// ══════════════════════════════════════════════════
-function visSet() {
-  const q = searchQ.toLowerCase();
+// ── Filter ────────────────────────────────────────────────
+function visSet(){
+  const q=searchQ.toLowerCase();
   return new Set(nodes.filter(n=>
-    n.group==="center" || (
-      activeC.has(n.closeness) &&
-      (!activeGr || n.group===activeGr) &&
-      (!q || n.id.includes(q))
+    n.group==="center"||(
+      activeC.has(n.closeness)&&
+      (!activeGr||(n.groups||[]).includes(activeGr))&&
+      (!q||n.id.toLowerCase().includes(q))
     )
   ).map(n=>n.id));
 }
 
-// ══════════════════════════════════════════════════
-// D3 GRAPH
-// ══════════════════════════════════════════════════
-const svg    = d3.select("#graph");
-const gview  = document.getElementById("gview");
-let W = gview.clientWidth, H = gview.clientHeight;
-
-// glow filters
-const defs = svg.append("defs");
-const mkGlow = (id,blur)=>{
-  const f=defs.append("filter").attr("id",id)
-    .attr("x","-60%").attr("y","-60%").attr("width","220%").attr("height","220%");
+// ── D3 setup ──────────────────────────────────────────────
+const svg=d3.select("#graph");
+const gview=document.getElementById("gview");
+let W=gview.clientWidth,H=gview.clientHeight;
+const defs=svg.append("defs");
+const mkGlow=(id,blur)=>{
+  const f=defs.append("filter").attr("id",id).attr("x","-60%").attr("y","-60%").attr("width","220%").attr("height","220%");
   f.append("feGaussianBlur").attr("stdDeviation",blur).attr("result","b");
-  const m=f.append("feMerge");
-  m.append("feMergeNode").attr("in","b");
-  m.append("feMergeNode").attr("in","SourceGraphic");
+  const m=f.append("feMerge");m.append("feMergeNode").attr("in","b");m.append("feMergeNode").attr("in","SourceGraphic");
 };
-mkGlow("gn",3); mkGlow("gc",9);
-
-const root = svg.append("g");
+mkGlow("gn",3);mkGlow("gc",9);
+const root=svg.append("g");
 svg.call(d3.zoom().scaleExtent([.3,4]).on("zoom",e=>root.attr("transform",e.transform)));
+const hullLine=d3.line().curve(d3.curveCatmullRomClosed.alpha(.5));
+let hullSel,hlSel,lnkSel,nodSel,sim;
 
-let hullSel, hlSel, lnkSel, nodSel, sim;
-const hullLine = d3.line().curve(d3.curveCatmullRomClosed.alpha(.5));
-
-function gcPos() {
-  const gs = [...new Set(nodes.filter(n=>n.group!=="center").map(n=>n.group))];
-  const n=gs.length, cx=W/2, cy=H/2, r=Math.min(W,H)*.31;
+function gcPos(){
+  const gs=[...new Set(nodes.filter(n=>n.groups).flatMap(n=>n.groups||[]))];
+  const n=gs.length,cx=W/2,cy=H/2,r=Math.min(W,H)*.3;
   const pos={center:{x:cx,y:cy}};
-  gs.forEach((g,i)=>{
-    const a=(i/n)*2*Math.PI-Math.PI/2;
-    pos[g]={x:cx+r*Math.cos(a), y:cy+r*Math.sin(a)};
-  });
+  gs.forEach((g,i)=>{const a=(i/n)*2*Math.PI-Math.PI/2;pos[g]={x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)};});
   return pos;
 }
 
-function buildGraph() {
-  root.selectAll("*").remove();
-  if(!nodes.length) return;
-  const pos = gcPos();
-  const groups = [...new Set(nodes.filter(n=>n.group!=="center").map(n=>n.group))];
+function buildGraph(){
+  root.selectAll("*").remove();if(!nodes.length)return;
+  const pos=gcPos();
+  const allGs=[...new Set(nodes.filter(n=>n.groups).flatMap(n=>n.groups||[]))];
+  const xForce=d=>{
+    if(d.group==="center")return W/2;
+    const gs=d.groups||[];return gs.length?gs.reduce((s,g)=>s+(pos[g]||pos.center).x,0)/gs.length:W/2;
+  };
+  const yForce=d=>{
+    if(d.group==="center")return H/2;
+    const gs=d.groups||[];return gs.length?gs.reduce((s,g)=>s+(pos[g]||pos.center).y,0)/gs.length:H/2;
+  };
+  sim=d3.forceSimulation(nodes)
+    .force("link",d3.forceLink(links).id(d=>d.id)
+      .distance(d=>d.kind==="hub"?62+(3-(d.w||1))*28:d.kind==="peer"?52:165)
+      .strength(d=>d.kind==="hub"?.2:d.kind==="peer"?.14:.07))
+    .force("charge",d3.forceManyBody().strength(-260))
+    .force("col",d3.forceCollide(d=>d.r+13))
+    .force("x",d3.forceX(xForce).strength(.2))
+    .force("y",d3.forceY(yForce).strength(.2));
 
-  sim = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d=>d.id)
-      .distance(d=>d.kind==="hub"?60+(3-(d.w||1))*28:d.kind==="peer"?52:160)
-      .strength(d=>d.kind==="hub"?.22:d.kind==="peer"?.15:.08))
-    .force("charge", d3.forceManyBody().strength(-270))
-    .force("col",    d3.forceCollide(d=>d.r+13))
-    .force("x", d3.forceX(d=>(pos[d.group]||pos.center).x).strength(.2))
-    .force("y", d3.forceY(d=>(pos[d.group]||pos.center).y).strength(.2));
+  hullSel=root.append("g").selectAll("path").data(allGs).join("path")
+    .attr("class","hull").attr("fill",g=>gm(g).bg).attr("stroke",g=>gm(g).sk).attr("stroke-width",1.5);
 
-  // ── Hulls (group blobs) ──────────────────────────
-  hullSel = root.append("g").selectAll("path").data(groups).join("path")
-    .attr("class","hull")
-    .attr("fill",  g=>gm(g).bg)
-    .attr("stroke",g=>gm(g).sk)
-    .attr("stroke-width",1.5);
-
-  // ── Hull labels ──────────────────────────────────
-  const hlG = root.append("g");
-  hlSel = hlG.selectAll(".hl-g").data(groups).join("g").attr("class","hl-g");
-
-  hlSel.append("rect").attr("height",22)
-    .attr("fill",  g=>gm(g).bg)
-    .attr("stroke",g=>gm(g).sk)
-    .attr("stroke-width",1);
-
-  hlSel.append("text")
-    .text(g=>gm(g).label)
-    .attr("fill",g=>gm(g).color)
-    .attr("font-size","11.5px").attr("font-family","Arial,sans-serif")
-    .attr("font-weight","600").attr("text-anchor","middle")
-    .attr("dominant-baseline","middle").attr("y",11);
-
-  // measure & size rects
+  const hlG=root.append("g");
+  hlSel=hlG.selectAll(".hl-g").data(allGs).join("g").attr("class","hl-g");
+  hlSel.append("rect").attr("height",22).attr("rx",11).attr("ry",11)
+    .attr("fill",g=>gm(g).bg).attr("stroke",g=>gm(g).sk).attr("stroke-width",1);
+  hlSel.append("text").text(g=>gm(g).label)
+    .attr("fill",g=>gm(g).color).attr("font-size","11.5px").attr("font-family","Arial,sans-serif")
+    .attr("font-weight","600").attr("text-anchor","middle").attr("dominant-baseline","middle").attr("y",11);
   hlSel.each(function(){
-    let tw=80;
-    try{ tw=d3.select(this).select("text").node().getBBox().width; }catch(e){}
-    d3.select(this).select("rect").attr("width",tw+20).attr("x",-(tw+20)/2).attr("rx",11).attr("ry",11);
+    let tw=80;try{tw=d3.select(this).select("text").node().getBBox().width;}catch(e){}
+    d3.select(this).select("rect").attr("width",tw+20).attr("x",-(tw+20)/2);
   });
 
-  // ── Links ────────────────────────────────────────
-  lnkSel = root.append("g").selectAll("line").data(links).join("line")
-    .attr("class","lnk")
-    .attr("stroke", d=>{
-      const sid=typeof d.source==="object"?d.source.id:d.source;
-      const tid=typeof d.target==="object"?d.target.id:d.target;
-      const sn=nodes.find(n=>n.id===sid), tn=nodes.find(n=>n.id===tid);
-      const m=Math.min(sn?.closeness??3,tn?.closeness??3);
-      return m<=1?"rgba(255,107,107,.6)":m<=2?"rgba(255,179,71,.48)":"rgba(116,185,255,.3)";
+  lnkSel=root.append("g").selectAll("line").data(links).join("line").attr("class","lnk")
+    .attr("stroke",d=>{
+      const si=typeof d.source==="object"?d.source.id:d.source;
+      const ti=typeof d.target==="object"?d.target.id:d.target;
+      const m=Math.min(nodes.find(n=>n.id===si)?.closeness??3,nodes.find(n=>n.id===ti)?.closeness??3);
+      return m<=1?"rgba(255,107,107,.6)":m<=2?"rgba(255,179,71,.48)":"rgba(116,185,255,.28)";
     })
     .attr("stroke-width",d=>d.kind==="peer"?1.2:d.kind==="hub"?1:.7);
 
-  // ── Nodes ────────────────────────────────────────
-  nodSel = root.append("g").selectAll("g").data(nodes).join("g")
-    .attr("class","node")
+  nodSel=root.append("g").selectAll("g").data(nodes).join("g").attr("class","node")
     .call(d3.drag()
       .on("start",(e,d)=>{if(!e.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y})
-      .on("drag", (e,d)=>{d.fx=e.x;d.fy=e.y})
-      .on("end",  (e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null}))
-    .on("click",(_,d)=>{if(d.group!=="center")openPanel(d)});
+      .on("drag",(e,d)=>{d.fx=e.x;d.fy=e.y})
+      .on("end",(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null}))
+    .on("click",(_,d)=>openPanel(d.group==="center"?null:d));
 
-  nodSel.filter(d=>d.group==="center")
-    .append("circle").attr("class","cpulse")
-    .attr("r",40).attr("fill","none")
-    .attr("stroke","rgba(255,255,255,.18)").attr("stroke-width",2);
+  // 3 staggered ripple rings on center
+  const cg=nodSel.filter(d=>d.group==="center");
+  [1,2,3].forEach(i=>cg.append("circle").attr("class",`ring ring${i}`).attr("r",36));
 
   nodSel.append("circle")
     .attr("r",d=>d.r)
     .attr("fill",d=>{
-      if(d.group==="center") return "rgba(255,255,255,.1)";
-      const c=CC[d.closeness];
-      return d.closeness===1?c+"cc":d.closeness===2?c+"88":c+"44";
+      if(d.group==="center")return"rgba(255,255,255,.1)";
+      const c=CC[d.closeness];return d.closeness===1?c+"cc":d.closeness===2?c+"88":c+"44";
     })
     .attr("stroke",d=>d.group==="center"?"#fff":CC[d.closeness])
     .attr("stroke-width",d=>d.group==="center"?2:1.5)
     .attr("filter",d=>d.group==="center"?"url(#gc)":"url(#gn)");
 
-  nodSel.append("text")
-    .text(d=>d.id)
+  nodSel.append("text").text(d=>d.id)
     .style("font-size",d=>d.group==="center"?"14px":"11px")
     .style("font-weight",d=>d.group==="center"?"600":"400")
     .style("fill","rgba(255,255,255,.9)");
@@ -527,241 +411,235 @@ function buildGraph() {
   applyFilter();
 }
 
-function tick() {
-  lnkSel
-    .attr("x1",d=>d.source.x).attr("y1",d=>d.source.y)
-    .attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
+function tick(){
+  lnkSel.attr("x1",d=>d.source.x).attr("y1",d=>d.source.y)
+         .attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
   nodSel.attr("transform",d=>`translate(${d.x},${d.y})`);
-
-  // build position map by group
-  const byG = {};
-  nodes.filter(n=>n.group!=="center"&&n.x!=null).forEach(n=>{
-    (byG[n.group]||(byG[n.group]=[])).push([n.x,n.y]);
+  const byG={};
+  nodes.filter(n=>n.groups&&n.x!=null).forEach(n=>{
+    (n.groups||[]).forEach(g=>{(byG[g]||(byG[g]=[])).push([n.x,n.y]);});
   });
-
-  // update hull paths
   hullSel.attr("d",g=>{
-    let pts=[...(byG[g]||[])];
-    if(pts.length<1) return null;
-    if(pts.length===1) return null;
+    let pts=[...(byG[g]||[])];if(pts.length<2)return null;
     if(pts.length===2){
       const mx=(pts[0][0]+pts[1][0])/2,my=(pts[0][1]+pts[1][1])/2;
-      const dx=pts[1][0]-pts[0][0],dy=pts[1][1]-pts[0][1];
-      const len=Math.sqrt(dx*dx+dy*dy)||1;
+      const dx=pts[1][0]-pts[0][0],dy=pts[1][1]-pts[0][1],len=Math.sqrt(dx*dx+dy*dy)||1;
       pts.push([mx-dy/len*28,my+dx/len*28],[mx+dy/len*28,my-dx/len*28]);
     }
-    const h=d3.polygonHull(pts); if(!h) return null;
-    const [cx,cy]=d3.polygonCentroid(h);
-    const pad=h.map(p=>{
-      const dx=p[0]-cx,dy=p[1]-cy,d=Math.sqrt(dx*dx+dy*dy)||1;
-      return[p[0]+dx/d*34,p[1]+dy/d*34];
-    });
-    return hullLine(pad);
+    const h=d3.polygonHull(pts);if(!h)return null;
+    const[cx,cy]=d3.polygonCentroid(h);
+    return hullLine(h.map(p=>{const dx=p[0]-cx,dy=p[1]-cy,d=Math.sqrt(dx*dx+dy*dy)||1;return[p[0]+dx/d*34,p[1]+dy/d*34];}));
   });
-
-  // update hull label positions
   hlSel.attr("transform",g=>{
-    const pts=byG[g];
-    if(!pts||!pts.length) return "translate(-9999,-9999)";
+    const pts=byG[g];if(!pts?.length)return"translate(-9999,-9999)";
     const cx=pts.reduce((s,p)=>s+p[0],0)/pts.length;
     const minY=Math.min(...pts.map(p=>p[1]));
-    return `translate(${cx},${Math.max(18,minY-46)})`;
+    return`translate(${cx},${Math.max(18,minY-46)})`;
   });
 }
 
-function applyFilter() {
-  if(!nodSel) return;
+function applyFilter(){
+  if(!nodSel)return;
   const vis=visSet();
-  nodSel.classed("dim", d=>!vis.has(d.id));
-  if(lnkSel) lnkSel.classed("dim",d=>{
+  nodSel.classed("dim",d=>!vis.has(d.id));
+  lnkSel?.classed("dim",d=>{
     const si=typeof d.source==="object"?d.source.id:d.source;
     const ti=typeof d.target==="object"?d.target.id:d.target;
     return !vis.has(si)||!vis.has(ti);
   });
-  if(hullSel) hullSel.attr("opacity",g=>{
-    const ms=nodes.filter(n=>n.group===g);
-    return ms.some(n=>vis.has(n.id))?1:.08;
+  hullSel?.attr("opacity",g=>{
+    return nodes.filter(n=>(n.groups||[]).includes(g)).some(n=>vis.has(n.id))?1:.08;
   });
 }
 
-// ══════════════════════════════════════════════════
-// TABLE VIEW
-// ══════════════════════════════════════════════════
-function buildTable() {
+// ── Table ─────────────────────────────────────────────────
+function buildTable(){
   const tbody=document.getElementById("tbody");
   tbody.innerHTML="";
   const vis=visSet();
-  const contacts=nodes.filter(n=>n.group!=="center");
+  const contacts=nodes.filter(n=>n.groups);
   let shown=0;
-
   contacts.forEach(d=>{
-    if(!vis.has(d.id)) return;
+    if(!vis.has(d.id))return;
     shown++;
-    const tr=document.createElement("tr");
-    tr.dataset.id=d.id;
+    const tr=document.createElement("tr");tr.dataset.id=d.id;
     tr.innerHTML=`
 <td><input class="ci" value="${xe(d.id)}" data-f="id"></td>
-<td>${mkGSel(d.group)}</td>
+<td><div class="group-pills">${(d.groups||[]).map(g=>`<span class="gpill" style="color:${gm(g).color};border-color:${gm(g).sk};background:${gm(g).bg}">${gm(g).label}</span>`).join("")}</div></td>
 <td>${mkCSel(d.closeness)}</td>
 <td><input class="ci" value="${xe(d.phone||"")}" data-f="phone" style="direction:ltr;text-align:right"></td>
-<td style="text-align:center">${mkWA(d)}</td>
-<td><button class="del" data-id="${xe(d.id)}" onclick="delRow(this)">×</button></td>`;
+<td style="text-align:center">${d.phone?`<a class="wa-sm" href="https://wa.me/${d.phone.replace(/\D/g,"").replace(/^0/,"972")}?text=${encodeURIComponent(`היי ${d.id}! מה נשמע?`)}" target="_blank">💬</a>`:""}
+</td>
+<td style="display:flex;gap:4px;padding-top:6px">
+  <button class="edit-btn" data-id="${xe(d.id)}">✏</button>
+  <button class="del" data-id="${xe(d.id)}">×</button>
+</td>`;
     tbody.appendChild(tr);
   });
-
-  tbody.querySelectorAll(".ci,.cs").forEach(el=>el.addEventListener("change",syncRow));
+  tbody.querySelectorAll(".ci").forEach(el=>el.addEventListener("change",syncRow));
+  tbody.querySelectorAll(".cs").forEach(el=>el.addEventListener("change",syncRow));
+  tbody.querySelectorAll(".edit-btn").forEach(btn=>btn.addEventListener("click",()=>{
+    const nd=nodes.find(n=>n.id===btn.dataset.id);if(nd)openPanel(nd);
+  }));
+  tbody.querySelectorAll(".del").forEach(btn=>btn.addEventListener("click",()=>{
+    nodes=nodes.filter(n=>n.id!==btn.dataset.id);
+    links=genLinks(nodes);
+    btn.closest("tr").remove();
+    if(view==="graph")buildGraph();
+  }));
   document.getElementById("rowCount").textContent=
-    shown===contacts.length?`${contacts.length} חברים`:`${shown} מתוך ${contacts.length}`;
+    shown===contacts.length?`${contacts.length} חברים`:`${shown} / ${contacts.length}`;
 }
 
 const xe=s=>String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 
-function mkGSel(val){
-  return`<select class="cs" data-f="group">${
-    Object.entries(GM).map(([k,v])=>`<option value="${k}"${val===k?" selected":""}>${v.label}</option>`).join("")
-  }</select>`;
-}
 function mkCSel(val){
   return`<select class="cs" data-f="closeness">
 <option value="1"${val===1?" selected":""}>1 – קרוב מאוד</option>
 <option value="2"${val===2?" selected":""}>2 – קרוב</option>
-<option value="3"${val===3?" selected":""}>3 – מכר</option>
-</select>`;
-}
-function mkWA(d){
-  if(!d.phone) return"";
-  const n=d.phone.replace(/\D/g,"").replace(/^0/,"972");
-  const m=encodeURIComponent(`היי ${d.id}! מה נשמע?`);
-  return`<a class="wa-sm" href="https://wa.me/${n}?text=${m}" target="_blank">💬</a>`;
+<option value="3"${val===3?" selected":""}>3 – מכר</option></select>`;
 }
 
 function syncRow(e){
-  const tr=e.target.closest("tr"); if(!tr) return;
-  const node=nodes.find(n=>n.id===tr.dataset.id); if(!node) return;
-  const f=e.target.dataset.f, v=e.target.value.trim();
-  if(f==="id"){ node.id=v; tr.dataset.id=v; }
-  if(f==="group")    node.group=v;
-  if(f==="closeness"){node.closeness=parseInt(v); node.r=v==="1"?17:v==="2"?14:12;}
-  if(f==="phone")    node.phone=v;
+  const tr=e.target.closest("tr");if(!tr)return;
+  const nd=nodes.find(n=>n.id===tr.dataset.id);if(!nd)return;
+  const f=e.target.dataset.f,v=e.target.value.trim();
+  if(f==="id"){nd.id=v;tr.dataset.id=v;}
+  if(f==="closeness"){nd.closeness=parseInt(v);nd.r=v==="1"?17:v==="2"?14:12;}
+  if(f==="phone")nd.phone=v;
   links=genLinks(nodes);
 }
 
-function delRow(btn){
-  const id=btn.dataset.id;
-  nodes=nodes.filter(n=>n.id!==id);
-  links=genLinks(nodes);
-  btn.closest("tr").remove();
-  if(view==="graph") buildGraph();
-  else buildTable();
-}
+document.getElementById("btnAddRow").addEventListener("click",()=>openPanel(null));
 
-document.getElementById("btnAdd").addEventListener("click",()=>{
-  nodes.push({id:"חבר חדש",group:"other",closeness:3,phone:"",r:12});
-  links=genLinks(nodes);
-  buildTable();
-  if(view==="graph") buildGraph();
-  const rows=document.querySelectorAll("#tbody tr");
-  rows[rows.length-1]?.querySelector(".ci")?.focus();
-});
-
-// ══════════════════════════════════════════════════
-// PANEL
-// ══════════════════════════════════════════════════
+// ── Panel ─────────────────────────────────────────────────
 function openPanel(d){
-  document.getElementById("pName").textContent=d.id;
-  const m=gm(d.group);
-  const tag=document.getElementById("pGtag");
-  tag.textContent=m.label;
-  tag.style.cssText=`background:${m.bg};color:${m.color};border:1px solid ${m.sk}`;
-
-  const dc=document.getElementById("pDots"); dc.innerHTML="";
-  const filled=4-d.closeness, col=CC[d.closeness];
-  for(let i=1;i<=3;i++){
-    const el=document.createElement("div"); el.className="dot";
-    el.style.background=i<=filled?col:"rgba(255,255,255,.15)";
-    el.style.boxShadow =i<=filled?`0 0 5px ${col}55`:"none";
-    dc.appendChild(el);
-  }
-
-  document.getElementById("pPhone").textContent=d.phone||"—";
-  const wa=document.getElementById("pWa");
-  if(d.phone){
-    const n=d.phone.replace(/\D/g,"").replace(/^0/,"972");
-    wa.href=`https://wa.me/${n}?text=${encodeURIComponent(`היי ${d.id}! מה נשמע?`)}`;
-    wa.style.display="flex";
-  } else { wa.style.display="none"; }
-
+  editId=d?d.id:null;
+  document.getElementById("pNameInput").value=d?d.id:"";
+  renderGCheck(d?d.groups||[]:[]);
+  const c=d?d.closeness:3;
+  document.querySelectorAll(".csel-btn").forEach(b=>b.classList.toggle("on",parseInt(b.dataset.c)===c));
+  document.getElementById("pPhoneInput").value=d?d.phone||"":"";
+  updateWaBtn();
+  document.getElementById("pDel").style.display=d?"":"none";
+  document.getElementById("pSave").textContent=d?"שמור":"הוסף";
   document.getElementById("panel").classList.add("open");
+  setTimeout(()=>document.getElementById("pNameInput").focus(),300);
 }
-function closePanel(){ document.getElementById("panel").classList.remove("open"); }
 
-// ══════════════════════════════════════════════════
-// LOAD / EXPORT
-// ══════════════════════════════════════════════════
-function loadData(txt){
-  nodes=parseTXT(txt);
-  links=genLinks(nodes);
+function closePanel(){document.getElementById("panel").classList.remove("open");}
+
+function renderGCheck(selected){
+  const cont=document.getElementById("pGG");
+  cont.innerHTML=Object.entries(GM).map(([k,v])=>{
+    const on=selected.includes(k);
+    return`<label class="gcb-lbl${on?" on":""}" style="${on?`color:${v.color};border-color:${v.sk}`:""}">
+<input type="checkbox" class="p-group-cb" value="${k}"${on?" checked":""}><span class="gcb-dot" style="background:${v.color}"></span><span>${v.label}</span></label>`;
+  }).join("");
+  cont.querySelectorAll(".gcb-lbl").forEach(lbl=>{
+    lbl.querySelector("input").addEventListener("change",()=>{
+      const on=lbl.querySelector("input").checked;
+      const v=gm(lbl.querySelector("input").value);
+      lbl.classList.toggle("on",on);
+      lbl.style.color=on?v.color:"";lbl.style.borderColor=on?v.sk:"";
+    });
+  });
+}
+
+function saveCurrent(){
+  const name=document.getElementById("pNameInput").value.trim();
+  if(!name){document.getElementById("pNameInput").focus();return;}
+  const groups=[...document.querySelectorAll(".p-group-cb:checked")].map(cb=>cb.value);
+  if(!groups.length){alert("בחרי לפחות קבוצה אחת");return;}
+  const c=parseInt(document.querySelector(".csel-btn.on")?.dataset.c||"3");
+  const phone=document.getElementById("pPhoneInput").value.trim();
+  const nd={id:name,groups,closeness:c,phone,r:c===1?17:c===2?14:12};
+  if(editId){
+    const idx=nodes.findIndex(n=>n.id===editId);
+    if(idx>-1){const{x,y,vx,vy}=nodes[idx];nodes[idx]={...nd,x,y,vx:vx||0,vy:vy||0};}
+  } else {
+    nodes.push({...nd,x:W/2+Math.random()*60-30,y:H/2+Math.random()*60-30});
+  }
+  links=genLinks(nodes);updateGFilter();closePanel();
+  if(view==="graph")buildGraph();else buildTable();
+}
+
+function deleteCurrent(){
+  if(!editId||!confirm(`למחוק את ${editId}?`))return;
+  nodes=nodes.filter(n=>n.id!==editId);
+  links=genLinks(nodes);closePanel();
+  if(view==="graph")buildGraph();else buildTable();
+}
+
+function updateWaBtn(){
+  const ph=document.getElementById("pPhoneInput").value.trim();
+  const wa=document.getElementById("pWa");
+  if(ph){
+    const n=ph.replace(/\D/g,"").replace(/^0/,"972");
+    const nm=document.getElementById("pNameInput").value.trim()||"?";
+    wa.href=`https://wa.me/${n}?text=${encodeURIComponent(`היי ${nm}! מה נשמע?`)}`;
+    wa.classList.remove("off");
+  }else{wa.href="#";wa.classList.add("off");}
+}
+
+document.getElementById("pPhoneInput").addEventListener("input",updateWaBtn);
+document.getElementById("pNameInput").addEventListener("input",updateWaBtn);
+document.querySelectorAll(".csel-btn").forEach(btn=>btn.addEventListener("click",()=>{
+  document.querySelectorAll(".csel-btn").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+}));
+
+// ── Groups ────────────────────────────────────────────────
+function promptAddGroup(reopenPanel){
+  const name=prompt("שם הקבוצה החדשה:");if(!name?.trim())return;
+  const key=name.trim().toLowerCase().replace(/\s+/g,"_");
+  if(!GM[key])GM[key]={label:name.trim(),...XCLR[xci++%XCLR.length]};
   updateGFilter();
-  closePanel();
-  if(view==="graph") buildGraph(); else buildTable();
+  if(reopenPanel){
+    const sel=[...document.querySelectorAll(".p-group-cb:checked")].map(cb=>cb.value);
+    sel.push(key);renderGCheck(sel);
+  }
 }
 
 function updateGFilter(){
   const sel=document.getElementById("fg");
-  const gs=[...new Set(nodes.filter(n=>n.group!=="center").map(n=>n.group))];
+  const gs=[...new Set(nodes.filter(n=>n.groups).flatMap(n=>n.groups||[]))];
   sel.innerHTML=`<option value="">הכל</option>`+
     gs.map(g=>`<option value="${g}"${activeGr===g?" selected":""}>${gm(g).label}</option>`).join("");
 }
 
+// ── File I/O ──────────────────────────────────────────────
+function loadData(txt){
+  nodes=parseTXT(txt);links=genLinks(nodes);
+  updateGFilter();closePanel();
+  if(view==="graph")buildGraph();else buildTable();
+}
+
 document.getElementById("btnLoad").addEventListener("click",()=>document.getElementById("file-input").click());
 document.getElementById("file-input").addEventListener("change",e=>{
-  const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=ev=>loadData(ev.target.result);
-  r.readAsText(f,"UTF-8");
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>loadData(ev.target.result);r.readAsText(f,"UTF-8");
   e.target.value="";
 });
-
 document.getElementById("btnExport").addEventListener("click",()=>{
   const owner=nodes.find(n=>n.group==="center");
-  const lines=[
-    `owner:${owner?.id||"אני"}`,
-    "# שם|קבוצה|קרבה|טלפון",
-    ...nodes.filter(n=>n.group!=="center").map(c=>`${c.id}|${c.group}|${c.closeness}|${c.phone||""}`)
-  ];
+  const lines=[`owner:${owner?.id||"אני"}`,"# שם|קבוצות|קרבה|טלפון",
+    ...nodes.filter(n=>n.groups).map(c=>`${c.id}|${(c.groups||[]).join(",")}|${c.closeness}|${c.phone||""}`)];
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain;charset=utf-8"}));
-  a.download="contacts.txt"; a.click();
+  a.download="contacts.txt";a.click();
 });
 
-// ══════════════════════════════════════════════════
-// FILTERS
-// ══════════════════════════════════════════════════
-document.getElementById("fg").addEventListener("change",e=>{
-  activeGr=e.target.value;
-  applyFilter();
-  if(view==="table") buildTable();
-});
+// ── Filters ───────────────────────────────────────────────
+document.getElementById("fg").addEventListener("change",e=>{activeGr=e.target.value;applyFilter();if(view==="table")buildTable();});
+document.querySelectorAll(".fcb").forEach(btn=>btn.addEventListener("click",()=>{
+  const c=parseInt(btn.dataset.c);
+  if(activeC.has(c)){activeC.delete(c);btn.classList.remove("on");}else{activeC.add(c);btn.classList.add("on");}
+  applyFilter();if(view==="table")buildTable();
+}));
+document.getElementById("fsearch").addEventListener("input",e=>{searchQ=e.target.value;applyFilter();if(view==="table")buildTable();});
 
-document.querySelectorAll(".fcb").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    const c=parseInt(btn.dataset.c);
-    if(activeC.has(c)){activeC.delete(c);btn.classList.remove("on")}
-    else              {activeC.add(c);   btn.classList.add("on")}
-    applyFilter();
-    if(view==="table") buildTable();
-  });
-});
-
-document.getElementById("fsearch").addEventListener("input",e=>{
-  searchQ=e.target.value;
-  applyFilter();
-  if(view==="table") buildTable();
-});
-
-// ══════════════════════════════════════════════════
-// VIEW TOGGLE
-// ══════════════════════════════════════════════════
+// ── View toggle ───────────────────────────────────────────
 document.getElementById("btnGV").addEventListener("click",()=>{
   view="graph";
   document.getElementById("gview").style.display="";
@@ -774,30 +652,30 @@ document.getElementById("btnGV").addEventListener("click",()=>{
 document.getElementById("btnTV").addEventListener("click",()=>{
   view="table";
   document.getElementById("gview").style.display="none";
-  document.getElementById("tview").style.display="";
+  document.getElementById("tview").style.display="block";
   document.getElementById("legend").style.display="none";
   document.getElementById("btnGV").classList.remove("on");
   document.getElementById("btnTV").classList.add("on");
-  closePanel();
-  buildTable();
+  closePanel();buildTable();
 });
 
-// ══════════════════════════════════════════════════
-// RESIZE
-// ══════════════════════════════════════════════════
+// ── Resize ────────────────────────────────────────────────
 window.addEventListener("resize",()=>{
-  W=gview.clientWidth; H=gview.clientHeight;
+  W=gview.clientWidth;H=gview.clientHeight;
   if(view==="graph"&&sim){
     const pos=gcPos();
-    sim.force("x",d3.forceX(d=>(pos[d.group]||pos.center).x).strength(.2));
-    sim.force("y",d3.forceY(d=>(pos[d.group]||pos.center).y).strength(.2));
+    sim.force("x",d3.forceX(d=>{
+      if(d.group==="center")return W/2;
+      const gs=d.groups||[];return gs.length?gs.reduce((s,g)=>s+(pos[g]||pos.center).x,0)/gs.length:W/2;
+    }).strength(.2));
+    sim.force("y",d3.forceY(d=>{
+      if(d.group==="center")return H/2;
+      const gs=d.groups||[];return gs.length?gs.reduce((s,g)=>s+(pos[g]||pos.center).y,0)/gs.length:H/2;
+    }).strength(.2));
     sim.alpha(.3).restart();
   }
 });
 
-// ══════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════
 loadData(SAMPLE);
 </script>
 </body>
