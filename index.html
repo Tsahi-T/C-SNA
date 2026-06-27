@@ -163,7 +163,7 @@ td{padding:4px 5px;border-bottom:1px solid rgba(140,140,240,.08);vertical-align:
     <button class="vbtn"    id="btnTV">📋 טבלה</button>
   </div>
   <div class="exp-wrap" id="expWrap">
-    <button id="btnExport" onclick="toggleExpMenu()">יצוא ↓</button>
+    <button id="btnExport" onclick="toggleExpMenu(event)">יצוא ↓</button>
     <div class="exp-menu" id="expMenu">
       <button onclick="exportTXT()">📄 TXT (עריכה)</button>
       <button onclick="exportPDF()">🖨️ PDF</button>
@@ -658,7 +658,8 @@ document.getElementById("file-input").addEventListener("change",e=>{
   const r=new FileReader();r.onload=ev=>loadData(ev.target.result);r.readAsText(f,"UTF-8");
   e.target.value="";
 });
-function toggleExpMenu(){
+function toggleExpMenu(e){
+  e.stopPropagation();
   const m=document.getElementById("expMenu");
   m.style.display=m.style.display==="block"?"none":"block";
 }
