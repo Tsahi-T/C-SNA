@@ -33,8 +33,12 @@ input,select{font-family:inherit}
 .vtog{display:flex;border:1px solid var(--brd);border-radius:6px;overflow:hidden;flex-shrink:0}
 .vbtn{padding:5px 10px;font-size:12px;background:transparent;border:none;color:var(--muted);transition:all .15s}
 .vbtn.on{background:rgba(123,126,255,.22);color:var(--acc)}
-#btnExport{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;padding:5px 10px;border-radius:6px;font-size:12px;white-space:nowrap;flex-shrink:0;transition:background .15s}
+.exp-wrap{position:relative;flex-shrink:0}
+#btnExport{background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;padding:5px 10px;border-radius:6px;font-size:12px;white-space:nowrap;transition:background .15s}
 #btnExport:hover{background:rgba(37,211,102,.2)}
+.exp-menu{position:absolute;top:calc(100% + 5px);left:0;background:var(--surf);border:1px solid var(--brd);border-radius:8px;overflow:hidden;min-width:148px;z-index:300;box-shadow:0 4px 18px rgba(0,0,0,.5);display:none}
+.exp-menu button{display:block;width:100%;padding:9px 14px;background:none;border:none;color:var(--txt);font-size:13px;text-align:right;cursor:pointer;white-space:nowrap;transition:background .12s}
+.exp-menu button:hover{background:rgba(255,255,255,.08)}
 
 /* ── Graph ── */
 #gview{position:fixed;top:var(--hdr);left:0;right:0;bottom:0}
@@ -158,7 +162,13 @@ td{padding:4px 5px;border-bottom:1px solid rgba(140,140,240,.08);vertical-align:
     <button class="vbtn on" id="btnGV">🕸 גרף</button>
     <button class="vbtn"    id="btnTV">📋 טבלה</button>
   </div>
-  <button id="btnExport">יצוא ↓</button>
+  <div class="exp-wrap" id="expWrap">
+    <button id="btnExport" onclick="toggleExpMenu()">יצוא ↓</button>
+    <div class="exp-menu" id="expMenu">
+      <button onclick="exportTXT()">📄 TXT (עריכה)</button>
+      <button onclick="exportPDF()">🖨️ PDF</button>
+    </div>
+  </div>
 </div>
 
 <div id="gview"><svg id="graph"></svg></div>
@@ -648,14 +658,92 @@ document.getElementById("file-input").addEventListener("change",e=>{
   const r=new FileReader();r.onload=ev=>loadData(ev.target.result);r.readAsText(f,"UTF-8");
   e.target.value="";
 });
-document.getElementById("btnExport").addEventListener("click",()=>{
+function toggleExpMenu(){
+  const m=document.getElementById("expMenu");
+  m.style.display=m.style.display==="block"?"none":"block";
+}
+document.addEventListener("click",e=>{
+  if(!document.getElementById("expWrap").contains(e.target))
+    document.getElementById("expMenu").style.display="none";
+});
+
+function exportTXT(){
+  document.getElementById("expMenu").style.display="none";
   const owner=nodes.find(n=>n.group==="center");
   const lines=[`owner:${owner?.id||"אני"}`,"# שם|קבוצות|קרבה|טלפון",
     ...nodes.filter(n=>n.groups).map(c=>`${c.id}|${(c.groups||[]).join(",")}|${c.closeness}|${c.phone||""}`)];
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/plain;charset=utf-8"}));
   a.download="contacts.txt";a.click();
-});
+}
+
+function exportPDF(){
+  document.getElementById("expMenu").style.display="none";
+  if(view==="graph") exportGraphPDF(); else exportTablePDF();
+}
+
+function exportGraphPDF(){
+  // Collect inline styles that D3 classes need
+  const extraCSS=`.hull{stroke-width:1.5;fill-rule:evenodd}
+.lnk{stroke-opacity:.38}
+.node circle{cursor:pointer}
+.node text{text-anchor:middle;dominant-baseline:middle;font-family:Arial,sans-serif}
+.ring{fill:none;stroke:rgba(255,255,255,.35);stroke-width:1.5}`;
+  const svgStr=new XMLSerializer().serializeToString(document.getElementById("graph"));
+  const win=window.open("","_blank","width=1280,height=820");
+  if(!win){alert("חסום חלון קופץ — אפשר ידנית דרך הדפדפן");return;}
+  const owner=nodes.find(n=>n.group==="center");
+  win.document.write(`<!DOCTYPE html><html><head>
+<meta charset="UTF-8"><title>מעגלי חברים – ${owner?.id||""}</title>
+<style>
+*{margin:0;padding:0}body{background:#07071a}
+svg{width:100vw;height:100vh;display:block}
+${extraCSS}
+@media print{@page{size:landscape;margin:0}
+body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+${svgStr}
+<script>setTimeout(()=>{window.print();},450)<\/script>
+</body></html>`);
+  win.document.close();
+}
+
+function exportTablePDF(){
+  const vis=visSet();
+  const contacts=nodes.filter(n=>n.groups&&vis.has(n.id));
+  const owner=nodes.find(n=>n.group==="center");
+  const clsLabel=c=>c===1?"קרוב מאוד":c===2?"קרוב":"מכר";
+  const rows=contacts.map(c=>`<tr>
+<td>${c.id}</td>
+<td>${(c.groups||[]).map(g=>gm(g).label).join(", ")}</td>
+<td>${clsLabel(c.closeness)}</td>
+<td dir="ltr" style="text-align:left">${c.phone||""}</td>
+</tr>`).join("");
+  const win=window.open("","_blank");
+  if(!win){alert("חסום חלון קופץ");return;}
+  win.document.write(`<!DOCTYPE html><html lang="he" dir="rtl"><head>
+<meta charset="UTF-8"><title>מעגלי חברים</title>
+<style>
+body{font-family:Arial,sans-serif;direction:rtl;padding:24px;color:#111;font-size:13px}
+h2{font-size:20px;margin-bottom:6px;color:#333}
+.sub{font-size:11px;color:#888;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+th{background:#7b7eff;color:#fff;padding:8px 10px;text-align:right;font-weight:600}
+td{padding:7px 10px;border-bottom:1px solid #eee}
+tr:nth-child(even) td{background:#f8f8ff}
+@media print{@page{margin:15mm}
+body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<h2>מעגלי החברים של ${owner?.id||""}</h2>
+<div class="sub">${contacts.length} אנשי קשר · ${new Date().toLocaleDateString("he-IL")}</div>
+<table>
+<thead><tr><th>שם</th><th>קבוצות</th><th>קרבה</th><th>טלפון</th></tr></thead>
+<tbody>${rows}</tbody>
+</table>
+<script>setTimeout(()=>{window.print();},300)<\/script>
+</body></html>`);
+  win.document.close();
+}
 
 // ── Filters ───────────────────────────────────────────────
 document.getElementById("fg").addEventListener("change",e=>{activeGr=e.target.value;applyFilter();if(view==="table")buildTable();});
